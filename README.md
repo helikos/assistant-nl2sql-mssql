@@ -1,3 +1,5 @@
+# fork from Azure-Samples/assistant-nl2sql.git
+
 # <img src="./images/azure_logo.png" alt="Azure Logo" style="width:30px;height:30px;"/> Azure Open AI Assistant for Natural Language to SQL
 # Assistant NL2SQL
 
