@@ -1,0 +1,1091 @@
+Here's my MS SQL Server database schema:
+Shema: Sales:
+Table: SalesTaxRate
+Columns:
+  - `SalesTaxRateID` INT PRIMARY KEY NOT NULL, -- Primary key for SalesTaxRate records.
+  - `StateProvinceID` INT NOT NULL, -- State, province, or country/region the sales tax applies to.
+  - `TaxType` TINYINT NOT NULL, -- 1 = Tax applied to retail transactions, 2 = Tax applied to wholesale transactions, 3 = Tax applied to all sales (retail and wholesale) transactions.
+  - `TaxRate` SMALLMONEY NOT NULL, -- Tax rate amount.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Tax rate description.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`StateProvinceID`) REFERENCES Person.StateProvince (`StateProvinceID`)
+
+---
+
+Table: PersonCreditCard
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Business entity identification number. Foreign key to Person.BusinessEntityID.
+  - `CreditCardID` INT PRIMARY KEY NOT NULL, -- Credit card identification number. Foreign key to CreditCard.CreditCardID.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.Person (`BusinessEntityID`)
+ - FOREIGN KEY (`CreditCardID`) REFERENCES Sales.CreditCard (`CreditCardID`)
+
+---
+
+Table: SalesTerritory
+Columns:
+  - `TerritoryID` INT PRIMARY KEY NOT NULL, -- Primary key for SalesTerritory records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Sales territory description
+  - `CountryRegionCode` NVARCHAR(3.0) NOT NULL, -- ISO standard country or region code. Foreign key to CountryRegion.CountryRegionCode. 
+  - `Group` NVARCHAR(50.0) NOT NULL, -- Geographic area to which the sales territory belong.
+  - `SalesYTD` MONEY NOT NULL, -- Sales in the territory year to date.
+  - `SalesLastYear` MONEY NOT NULL, -- Sales in the territory the previous year.
+  - `CostYTD` MONEY NOT NULL, -- Business costs in the territory year to date.
+  - `CostLastYear` MONEY NOT NULL, -- Business costs in the territory the previous year.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CountryRegionCode`) REFERENCES Person.CountryRegion (`CountryRegionCode`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Person.StateProvince (`TerritoryID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.Customer (`TerritoryID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesOrderHeader (`TerritoryID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesPerson (`TerritoryID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesTerritoryHistory (`TerritoryID`)
+
+---
+
+Table: SalesTerritoryHistory
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key. The sales rep.  Foreign key to SalesPerson.BusinessEntityID.
+  - `TerritoryID` INT PRIMARY KEY NOT NULL, -- Primary key. Territory identification number. Foreign key to SalesTerritory.SalesTerritoryID.
+  - `StartDate` DATETIME PRIMARY KEY NOT NULL, -- Primary key. Date the sales representive started work in the territory.
+  - `EndDate` DATETIME, -- Date the sales representative left work in the territory.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.SalesPerson (`BusinessEntityID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesTerritory (`TerritoryID`)
+
+---
+
+Table: ShoppingCartItem
+Columns:
+  - `ShoppingCartItemID` INT PRIMARY KEY NOT NULL, -- Primary key for ShoppingCartItem records.
+  - `ShoppingCartID` NVARCHAR(50.0) NOT NULL, -- Shopping cart identification number.
+  - `Quantity` INT NOT NULL, -- Product quantity ordered.
+  - `ProductID` INT NOT NULL, -- Product ordered. Foreign key to Product.ProductID.
+  - `DateCreated` DATETIME NOT NULL, -- Date the time the record was created.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+
+---
+
+Table: SpecialOffer
+Columns:
+  - `SpecialOfferID` INT PRIMARY KEY NOT NULL, -- Primary key for SpecialOffer records.
+  - `Description` NVARCHAR(255.0) NOT NULL, -- Discount description.
+  - `DiscountPct` SMALLMONEY NOT NULL, -- Discount precentage.
+  - `Type` NVARCHAR(50.0) NOT NULL, -- Discount type category.
+  - `Category` NVARCHAR(50.0) NOT NULL, -- Group the discount applies to such as Reseller or Customer.
+  - `StartDate` DATETIME NOT NULL, -- Discount start date.
+  - `EndDate` DATETIME NOT NULL, -- Discount end date.
+  - `MinQty` INT NOT NULL, -- Minimum discount percent allowed.
+  - `MaxQty` INT, -- Maximum discount percent allowed.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`SpecialOfferID`) REFERENCES Sales.SpecialOfferProduct (`SpecialOfferID`)
+
+---
+
+Table: SpecialOfferProduct
+Columns:
+  - `SpecialOfferID` INT PRIMARY KEY NOT NULL, -- Primary key for SpecialOfferProduct records.
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+ - FOREIGN KEY (`SpecialOfferID`) REFERENCES Sales.SpecialOffer (`SpecialOfferID`)
+ - FOREIGN KEY (`SpecialOfferID`,`ProductID`) REFERENCES Sales.SalesOrderDetail (`SpecialOfferID`,`ProductID`)
+
+---
+
+Table: Store
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to Customer.BusinessEntityID.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Name of the store.
+  - `SalesPersonID` INT, -- ID of the sales person assigned to the customer. Foreign key to SalesPerson.BusinessEntityID.
+  - `Demographics` XML(-1.0), -- Demographic informationg about the store such as the number of employees, annual sales and store type.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntity (`BusinessEntityID`)
+ - FOREIGN KEY (`SalesPersonID`) REFERENCES Sales.SalesPerson (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.Customer (`StoreID`)
+
+---
+
+Table: CountryRegionCurrency
+Columns:
+  - `CountryRegionCode` NVARCHAR(3.0) PRIMARY KEY NOT NULL, -- ISO code for countries and regions. Foreign key to CountryRegion.CountryRegionCode.
+  - `CurrencyCode` NCHAR(3.0) PRIMARY KEY NOT NULL, -- ISO standard currency code. Foreign key to Currency.CurrencyCode.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CountryRegionCode`) REFERENCES Person.CountryRegion (`CountryRegionCode`)
+ - FOREIGN KEY (`CurrencyCode`) REFERENCES Sales.Currency (`CurrencyCode`)
+
+---
+
+Table: CreditCard
+Columns:
+  - `CreditCardID` INT PRIMARY KEY NOT NULL, -- Primary key for CreditCard records.
+  - `CardType` NVARCHAR(50.0) NOT NULL, -- Credit card name.
+  - `CardNumber` NVARCHAR(25.0) NOT NULL, -- Credit card number.
+  - `ExpMonth` TINYINT NOT NULL, -- Credit card expiration month.
+  - `ExpYear` SMALLINT NOT NULL, -- Credit card expiration year.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CreditCardID`) REFERENCES Sales.PersonCreditCard (`CreditCardID`)
+ - FOREIGN KEY (`CreditCardID`) REFERENCES Sales.SalesOrderHeader (`CreditCardID`)
+
+---
+
+Table: Currency
+Columns:
+  - `CurrencyCode` NCHAR(3.0) PRIMARY KEY NOT NULL, -- The ISO code for the Currency.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Currency name.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CurrencyCode`) REFERENCES Sales.CountryRegionCurrency (`CurrencyCode`)
+ - FOREIGN KEY (`CurrencyCode`,`CurrencyCode`) REFERENCES Sales.CurrencyRate (`FromCurrencyCode`,`ToCurrencyCode`)
+
+---
+
+Table: CurrencyRate
+Columns:
+  - `CurrencyRateID` INT PRIMARY KEY NOT NULL, -- Primary key for CurrencyRate records.
+  - `CurrencyRateDate` DATETIME NOT NULL, -- Date and time the exchange rate was obtained.
+  - `FromCurrencyCode` NCHAR(3.0) NOT NULL, -- Exchange rate was converted from this currency code.
+  - `ToCurrencyCode` NCHAR(3.0) NOT NULL, -- Exchange rate was converted to this currency code.
+  - `AverageRate` MONEY NOT NULL, -- Average exchange rate for the day.
+  - `EndOfDayRate` MONEY NOT NULL, -- Final exchange rate for the day.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`FromCurrencyCode`,`ToCurrencyCode`) REFERENCES Sales.Currency (`CurrencyCode`,`CurrencyCode`)
+ - FOREIGN KEY (`CurrencyRateID`) REFERENCES Sales.SalesOrderHeader (`CurrencyRateID`)
+
+---
+
+Table: Customer
+Columns:
+  - `CustomerID` INT PRIMARY KEY NOT NULL, -- Primary key.
+  - `PersonID` INT, -- Foreign key to Person.BusinessEntityID
+  - `StoreID` INT, -- Foreign key to Store.BusinessEntityID
+  - `TerritoryID` INT, -- ID of the territory in which the customer is located. Foreign key to SalesTerritory.SalesTerritoryID.
+  - `AccountNumber` VARCHAR(10.0) NOT NULL, -- Unique number identifying the customer assigned by the accounting system.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`PersonID`) REFERENCES Person.Person (`BusinessEntityID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesTerritory (`TerritoryID`)
+ - FOREIGN KEY (`StoreID`) REFERENCES Sales.Store (`BusinessEntityID`)
+ - FOREIGN KEY (`CustomerID`) REFERENCES Sales.SalesOrderHeader (`CustomerID`)
+
+---
+
+Table: SalesOrderDetail
+Columns:
+  - `SalesOrderID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to SalesOrderHeader.SalesOrderID.
+  - `SalesOrderDetailID` INT PRIMARY KEY NOT NULL, -- Primary key. One incremental unique number per product sold.
+  - `CarrierTrackingNumber` NVARCHAR(25.0), -- Shipment tracking number supplied by the shipper.
+  - `OrderQty` SMALLINT NOT NULL, -- Quantity ordered per product.
+  - `ProductID` INT NOT NULL, -- Product sold to customer. Foreign key to Product.ProductID.
+  - `SpecialOfferID` INT NOT NULL, -- Promotional code. Foreign key to SpecialOffer.SpecialOfferID.
+  - `UnitPrice` MONEY NOT NULL, -- Selling price of a single product.
+  - `UnitPriceDiscount` MONEY NOT NULL, -- Discount amount.
+  - `LineTotal` NUMERIC NOT NULL, -- Per product subtotal. Computed as UnitPrice * (1 - UnitPriceDiscount) * OrderQty.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`SalesOrderID`) REFERENCES Sales.SalesOrderHeader (`SalesOrderID`)
+ - FOREIGN KEY (`SpecialOfferID`,`ProductID`) REFERENCES Sales.SpecialOfferProduct (`SpecialOfferID`,`ProductID`)
+
+---
+
+Table: SalesOrderHeader
+Columns:
+  - `SalesOrderID` INT PRIMARY KEY NOT NULL, -- Primary key.
+  - `RevisionNumber` TINYINT NOT NULL, -- Incremental number to track changes to the sales order over time.
+  - `OrderDate` DATETIME NOT NULL, -- Dates the sales order was created.
+  - `DueDate` DATETIME NOT NULL, -- Date the order is due to the customer.
+  - `ShipDate` DATETIME, -- Date the order was shipped to the customer.
+  - `Status` TINYINT NOT NULL, -- Order current status. 1 = In process; 2 = Approved; 3 = Backordered; 4 = Rejected; 5 = Shipped; 6 = Cancelled
+  - `OnlineOrderFlag` BIT NOT NULL, -- 0 = Order placed by sales person. 1 = Order placed online by customer.
+  - `SalesOrderNumber` NVARCHAR(25.0) NOT NULL, -- Unique sales order identification number.
+  - `PurchaseOrderNumber` NVARCHAR(25.0), -- Customer purchase order number reference. 
+  - `AccountNumber` NVARCHAR(15.0), -- Financial accounting number reference.
+  - `CustomerID` INT NOT NULL, -- Customer identification number. Foreign key to Customer.BusinessEntityID.
+  - `SalesPersonID` INT, -- Sales person who created the sales order. Foreign key to SalesPerson.BusinessEntityID.
+  - `TerritoryID` INT, -- Territory in which the sale was made. Foreign key to SalesTerritory.SalesTerritoryID.
+  - `BillToAddressID` INT NOT NULL, -- Customer billing address. Foreign key to Address.AddressID.
+  - `ShipToAddressID` INT NOT NULL, -- Customer shipping address. Foreign key to Address.AddressID.
+  - `ShipMethodID` INT NOT NULL, -- Shipping method. Foreign key to ShipMethod.ShipMethodID.
+  - `CreditCardID` INT, -- Credit card identification number. Foreign key to CreditCard.CreditCardID.
+  - `CreditCardApprovalCode` VARCHAR(15.0), -- Approval code provided by the credit card company.
+  - `CurrencyRateID` INT, -- Currency exchange rate used. Foreign key to CurrencyRate.CurrencyRateID.
+  - `SubTotal` MONEY NOT NULL, -- Sales subtotal. Computed as SUM(SalesOrderDetail.LineTotal)for the appropriate SalesOrderID.
+  - `TaxAmt` MONEY NOT NULL, -- Tax amount.
+  - `Freight` MONEY NOT NULL, -- Shipping cost.
+  - `TotalDue` MONEY NOT NULL, -- Total due from customer. Computed as Subtotal + TaxAmt + Freight.
+  - `Comment` NVARCHAR(128.0), -- Sales representative comments.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BillToAddressID`,`ShipToAddressID`) REFERENCES Person.Address (`AddressID`,`AddressID`)
+ - FOREIGN KEY (`ShipMethodID`) REFERENCES Purchasing.ShipMethod (`ShipMethodID`)
+ - FOREIGN KEY (`CreditCardID`) REFERENCES Sales.CreditCard (`CreditCardID`)
+ - FOREIGN KEY (`CurrencyRateID`) REFERENCES Sales.CurrencyRate (`CurrencyRateID`)
+ - FOREIGN KEY (`CustomerID`) REFERENCES Sales.Customer (`CustomerID`)
+ - FOREIGN KEY (`SalesPersonID`) REFERENCES Sales.SalesPerson (`BusinessEntityID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesTerritory (`TerritoryID`)
+ - FOREIGN KEY (`SalesOrderID`) REFERENCES Sales.SalesOrderDetail (`SalesOrderID`)
+ - FOREIGN KEY (`SalesOrderID`) REFERENCES Sales.SalesOrderHeaderSalesReason (`SalesOrderID`)
+
+---
+
+Table: SalesOrderHeaderSalesReason
+Columns:
+  - `SalesOrderID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to SalesOrderHeader.SalesOrderID.
+  - `SalesReasonID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to SalesReason.SalesReasonID.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`SalesOrderID`) REFERENCES Sales.SalesOrderHeader (`SalesOrderID`)
+ - FOREIGN KEY (`SalesReasonID`) REFERENCES Sales.SalesReason (`SalesReasonID`)
+
+---
+
+Table: SalesPerson
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key for SalesPerson records. Foreign key to Employee.BusinessEntityID
+  - `TerritoryID` INT, -- Territory currently assigned to. Foreign key to SalesTerritory.SalesTerritoryID.
+  - `SalesQuota` MONEY, -- Projected yearly sales.
+  - `Bonus` MONEY NOT NULL, -- Bonus due if quota is met.
+  - `CommissionPct` SMALLMONEY NOT NULL, -- Commision percent received per sale.
+  - `SalesYTD` MONEY NOT NULL, -- Sales total year to date.
+  - `SalesLastYear` MONEY NOT NULL, -- Sales total of previous year.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.Employee (`BusinessEntityID`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesTerritory (`TerritoryID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.SalesOrderHeader (`SalesPersonID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.SalesPersonQuotaHistory (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.SalesTerritoryHistory (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.Store (`SalesPersonID`)
+
+---
+
+Table: SalesPersonQuotaHistory
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Sales person identification number. Foreign key to SalesPerson.BusinessEntityID.
+  - `QuotaDate` DATETIME PRIMARY KEY NOT NULL, -- Sales quota date.
+  - `SalesQuota` MONEY NOT NULL, -- Sales quota amount.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.SalesPerson (`BusinessEntityID`)
+
+---
+
+Table: SalesReason
+Columns:
+  - `SalesReasonID` INT PRIMARY KEY NOT NULL, -- Primary key for SalesReason records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Sales reason description.
+  - `ReasonType` NVARCHAR(50.0) NOT NULL, -- Category the sales reason belongs to.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`SalesReasonID`) REFERENCES Sales.SalesOrderHeaderSalesReason (`SalesReasonID`)
+
+---
+
+Shema: Person:
+Table: PersonPhone
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Business entity identification number. Foreign key to Person.BusinessEntityID.
+  - `PhoneNumber` NVARCHAR(25.0) PRIMARY KEY NOT NULL, -- Telephone number identification number.
+  - `PhoneNumberTypeID` INT PRIMARY KEY NOT NULL, -- Kind of phone number. Foreign key to PhoneNumberType.PhoneNumberTypeID.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.Person (`BusinessEntityID`)
+ - FOREIGN KEY (`PhoneNumberTypeID`) REFERENCES Person.PhoneNumberType (`PhoneNumberTypeID`)
+
+---
+
+Table: PhoneNumberType
+Columns:
+  - `PhoneNumberTypeID` INT PRIMARY KEY NOT NULL, -- Primary key for telephone number type records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Name of the telephone number type
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`PhoneNumberTypeID`) REFERENCES Person.PersonPhone (`PhoneNumberTypeID`)
+
+---
+
+Table: Address
+Columns:
+  - `AddressID` INT PRIMARY KEY NOT NULL, -- Primary key for Address records.
+  - `AddressLine1` NVARCHAR(60.0) NOT NULL, -- First street address line.
+  - `AddressLine2` NVARCHAR(60.0), -- Second street address line.
+  - `City` NVARCHAR(30.0) NOT NULL, -- Name of the city.
+  - `StateProvinceID` INT NOT NULL, -- Unique identification number for the state or province. Foreign key to StateProvince table.
+  - `PostalCode` NVARCHAR(15.0) NOT NULL, -- Postal code for the street address.
+  - `SpatialLocation` GEOGRAPHY(-1.0), -- Latitude and longitude of this address.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`StateProvinceID`) REFERENCES Person.StateProvince (`StateProvinceID`)
+ - FOREIGN KEY (`AddressID`) REFERENCES Person.BusinessEntityAddress (`AddressID`)
+ - FOREIGN KEY (`AddressID`,`AddressID`) REFERENCES Sales.SalesOrderHeader (`BillToAddressID`,`ShipToAddressID`)
+
+---
+
+Table: AddressType
+Columns:
+  - `AddressTypeID` INT PRIMARY KEY NOT NULL, -- Primary key for AddressType records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Address type description. For example, Billing, Home, or Shipping.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`AddressTypeID`) REFERENCES Person.BusinessEntityAddress (`AddressTypeID`)
+
+---
+
+Table: StateProvince
+Columns:
+  - `StateProvinceID` INT PRIMARY KEY NOT NULL, -- Primary key for StateProvince records.
+  - `StateProvinceCode` NCHAR(3.0) NOT NULL, -- ISO standard state or province code.
+  - `CountryRegionCode` NVARCHAR(3.0) NOT NULL, -- ISO standard country or region code. Foreign key to CountryRegion.CountryRegionCode. 
+  - `IsOnlyStateProvinceFlag` BIT NOT NULL, -- 0 = StateProvinceCode exists. 1 = StateProvinceCode unavailable, using CountryRegionCode.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- State or province description.
+  - `TerritoryID` INT NOT NULL, -- ID of the territory in which the state or province is located. Foreign key to SalesTerritory.SalesTerritoryID.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CountryRegionCode`) REFERENCES Person.CountryRegion (`CountryRegionCode`)
+ - FOREIGN KEY (`TerritoryID`) REFERENCES Sales.SalesTerritory (`TerritoryID`)
+ - FOREIGN KEY (`StateProvinceID`) REFERENCES Person.Address (`StateProvinceID`)
+ - FOREIGN KEY (`StateProvinceID`) REFERENCES Sales.SalesTaxRate (`StateProvinceID`)
+
+---
+
+Table: BusinessEntity
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key for all customers, vendors, and employees.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntityAddress (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntityContact (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.Person (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Purchasing.Vendor (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.Store (`BusinessEntityID`)
+
+---
+
+Table: BusinessEntityAddress
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to BusinessEntity.BusinessEntityID.
+  - `AddressID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to Address.AddressID.
+  - `AddressTypeID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to AddressType.AddressTypeID.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`AddressID`) REFERENCES Person.Address (`AddressID`)
+ - FOREIGN KEY (`AddressTypeID`) REFERENCES Person.AddressType (`AddressTypeID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntity (`BusinessEntityID`)
+
+---
+
+Table: BusinessEntityContact
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to BusinessEntity.BusinessEntityID.
+  - `PersonID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to Person.BusinessEntityID.
+  - `ContactTypeID` INT PRIMARY KEY NOT NULL, -- Primary key.  Foreign key to ContactType.ContactTypeID.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntity (`BusinessEntityID`)
+ - FOREIGN KEY (`ContactTypeID`) REFERENCES Person.ContactType (`ContactTypeID`)
+ - FOREIGN KEY (`PersonID`) REFERENCES Person.Person (`BusinessEntityID`)
+
+---
+
+Table: ContactType
+Columns:
+  - `ContactTypeID` INT PRIMARY KEY NOT NULL, -- Primary key for ContactType records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Contact type description.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ContactTypeID`) REFERENCES Person.BusinessEntityContact (`ContactTypeID`)
+
+---
+
+Table: CountryRegion
+Columns:
+  - `CountryRegionCode` NVARCHAR(3.0) PRIMARY KEY NOT NULL, -- ISO standard code for countries and regions.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Country or region name.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CountryRegionCode`) REFERENCES Person.StateProvince (`CountryRegionCode`)
+ - FOREIGN KEY (`CountryRegionCode`) REFERENCES Sales.CountryRegionCurrency (`CountryRegionCode`)
+ - FOREIGN KEY (`CountryRegionCode`) REFERENCES Sales.SalesTerritory (`CountryRegionCode`)
+
+---
+
+Table: EmailAddress
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key. Person associated with this email address.  Foreign key to Person.BusinessEntityID
+  - `EmailAddressID` INT PRIMARY KEY NOT NULL, -- Primary key. ID of this email address.
+  - `EmailAddress` NVARCHAR(50.0), -- E-mail address for the person.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.Person (`BusinessEntityID`)
+
+---
+
+Table: Password
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL,
+  - `PasswordHash` VARCHAR(128.0) NOT NULL, -- Password for the e-mail account.
+  - `PasswordSalt` VARCHAR(10.0) NOT NULL, -- Random value concatenated with the password string before the password is hashed.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.Person (`BusinessEntityID`)
+
+---
+
+Table: Person
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key for Person records.
+  - `PersonType` NCHAR(2.0) NOT NULL, -- Primary type of person: SC = Store Contact, IN = Individual (retail) customer, SP = Sales person, EM = Employee (non-sales), VC = Vendor contact, GC = General contact
+  - `NameStyle` BIT NOT NULL, -- 0 = The data in FirstName and LastName are stored in western style (first name, last name) order.  1 = Eastern style (last name, first name) order.
+  - `Title` NVARCHAR(8.0), -- A courtesy title. For example, Mr. or Ms.
+  - `FirstName` NVARCHAR(50.0) NOT NULL, -- First name of the person.
+  - `MiddleName` NVARCHAR(50.0), -- Middle name or middle initial of the person.
+  - `LastName` NVARCHAR(50.0) NOT NULL, -- Last name of the person.
+  - `Suffix` NVARCHAR(10.0), -- Surname suffix. For example, Sr. or Jr.
+  - `EmailPromotion` INT NOT NULL, -- 0 = Contact does not wish to receive e-mail promotions, 1 = Contact does wish to receive e-mail promotions from AdventureWorks, 2 = Contact does wish to receive e-mail promotions from AdventureWorks a
+  - `AdditionalContactInfo` XML(-1.0), -- Additional contact information about the person stored in xml format. 
+  - `Demographics` XML(-1.0), -- Personal information such as hobbies, and income collected from online shoppers. Used for sales analysis.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntity (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.Employee (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntityContact (`PersonID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.EmailAddress (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.Password (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.PersonPhone (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.Customer (`PersonID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.PersonCreditCard (`BusinessEntityID`)
+
+---
+
+Shema: Production:
+Table: Product
+Columns:
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Primary key for Product records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Name of the product.
+  - `ProductNumber` NVARCHAR(25.0) NOT NULL, -- Unique product identification number.
+  - `MakeFlag` BIT NOT NULL, -- 0 = Product is purchased, 1 = Product is manufactured in-house.
+  - `FinishedGoodsFlag` BIT NOT NULL, -- 0 = Product is not a salable item. 1 = Product is salable.
+  - `Color` NVARCHAR(15.0), -- Product color.
+  - `SafetyStockLevel` SMALLINT NOT NULL, -- Minimum inventory quantity. 
+  - `ReorderPoint` SMALLINT NOT NULL, -- Inventory level that triggers a purchase order or work order. 
+  - `StandardCost` MONEY NOT NULL, -- Standard cost of the product.
+  - `ListPrice` MONEY NOT NULL, -- Selling price.
+  - `Size` NVARCHAR(5.0), -- Product size.
+  - `SizeUnitMeasureCode` NCHAR(3.0), -- Unit of measure for Size column.
+  - `WeightUnitMeasureCode` NCHAR(3.0), -- Unit of measure for Weight column.
+  - `Weight` DECIMAL, -- Product weight.
+  - `DaysToManufacture` INT NOT NULL, -- Number of days required to manufacture the product.
+  - `ProductLine` NCHAR(2.0), -- R = Road, M = Mountain, T = Touring, S = Standard
+  - `Class` NCHAR(2.0), -- H = High, M = Medium, L = Low
+  - `Style` NCHAR(2.0), -- W = Womens, M = Mens, U = Universal
+  - `ProductSubcategoryID` INT, -- Product is a member of this product subcategory. Foreign key to ProductSubCategory.ProductSubCategoryID. 
+  - `ProductModelID` INT, -- Product is a member of this product model. Foreign key to ProductModel.ProductModelID.
+  - `SellStartDate` DATETIME NOT NULL, -- Date the product was available for sale.
+  - `SellEndDate` DATETIME, -- Date the product was no longer available for sale.
+  - `DiscontinuedDate` DATETIME, -- Date the product was discontinued.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductModelID`) REFERENCES Production.ProductModel (`ProductModelID`)
+ - FOREIGN KEY (`ProductSubcategoryID`) REFERENCES Production.ProductSubcategory (`ProductSubcategoryID`)
+ - FOREIGN KEY (`SizeUnitMeasureCode`,`WeightUnitMeasureCode`) REFERENCES Production.UnitMeasure (`UnitMeasureCode`,`UnitMeasureCode`)
+ - FOREIGN KEY (`ProductID`,`ProductID`) REFERENCES Production.BillOfMaterials (`ProductAssemblyID`,`ComponentID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.ProductCostHistory (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.ProductDocument (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.ProductInventory (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.ProductListPriceHistory (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.ProductProductPhoto (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.ProductReview (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.TransactionHistory (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.WorkOrder (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Purchasing.ProductVendor (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Purchasing.PurchaseOrderDetail (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Sales.ShoppingCartItem (`ProductID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Sales.SpecialOfferProduct (`ProductID`)
+
+---
+
+Table: ScrapReason
+Columns:
+  - `ScrapReasonID` SMALLINT PRIMARY KEY NOT NULL, -- Primary key for ScrapReason records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Failure description.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ScrapReasonID`) REFERENCES Production.WorkOrder (`ScrapReasonID`)
+
+---
+
+Table: ProductCategory
+Columns:
+  - `ProductCategoryID` INT PRIMARY KEY NOT NULL, -- Primary key for ProductCategory records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Category description.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductCategoryID`) REFERENCES Production.ProductSubcategory (`ProductCategoryID`)
+
+---
+
+Table: ProductCostHistory
+Columns:
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Product identification number. Foreign key to Product.ProductID
+  - `StartDate` DATETIME PRIMARY KEY NOT NULL, -- Product cost start date.
+  - `EndDate` DATETIME, -- Product cost end date.
+  - `StandardCost` MONEY NOT NULL, -- Standard cost of the product.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+
+---
+
+Table: ProductDescription
+Columns:
+  - `ProductDescriptionID` INT PRIMARY KEY NOT NULL, -- Primary key for ProductDescription records.
+  - `Description` NVARCHAR(400.0) NOT NULL, -- Description of the product.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductDescriptionID`) REFERENCES Production.ProductModelProductDescriptionCulture (`ProductDescriptionID`)
+
+---
+
+Table: ProductDocument
+Columns:
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `DocumentNode` HIERARCHYID(892.0) PRIMARY KEY NOT NULL, -- Document identification number. Foreign key to Document.DocumentNode.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`DocumentNode`) REFERENCES Production.Document (`DocumentNode`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+
+---
+
+Table: ProductInventory
+Columns:
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `LocationID` SMALLINT PRIMARY KEY NOT NULL, -- Inventory location identification number. Foreign key to Location.LocationID. 
+  - `Shelf` NVARCHAR(10.0) NOT NULL, -- Storage compartment within an inventory location.
+  - `Bin` TINYINT NOT NULL, -- Storage container on a shelf in an inventory location.
+  - `Quantity` SMALLINT NOT NULL, -- Quantity of products in the inventory location.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`LocationID`) REFERENCES Production.Location (`LocationID`)
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+
+---
+
+Table: ProductListPriceHistory
+Columns:
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Product identification number. Foreign key to Product.ProductID
+  - `StartDate` DATETIME PRIMARY KEY NOT NULL, -- List price start date.
+  - `EndDate` DATETIME, -- List price end date
+  - `ListPrice` MONEY NOT NULL, -- Product list price.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+
+---
+
+Table: ProductModel
+Columns:
+  - `ProductModelID` INT PRIMARY KEY NOT NULL, -- Primary key for ProductModel records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Product model description.
+  - `CatalogDescription` XML(-1.0), -- Detailed product catalog information in xml format.
+  - `Instructions` XML(-1.0), -- Manufacturing instructions in xml format.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductModelID`) REFERENCES Production.Product (`ProductModelID`)
+ - FOREIGN KEY (`ProductModelID`) REFERENCES Production.ProductModelIllustration (`ProductModelID`)
+ - FOREIGN KEY (`ProductModelID`) REFERENCES Production.ProductModelProductDescriptionCulture (`ProductModelID`)
+
+---
+
+Table: ProductModelIllustration
+Columns:
+  - `ProductModelID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to ProductModel.ProductModelID.
+  - `IllustrationID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to Illustration.IllustrationID.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`IllustrationID`) REFERENCES Production.Illustration (`IllustrationID`)
+ - FOREIGN KEY (`ProductModelID`) REFERENCES Production.ProductModel (`ProductModelID`)
+
+---
+
+Table: ProductModelProductDescriptionCulture
+Columns:
+  - `ProductModelID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to ProductModel.ProductModelID.
+  - `ProductDescriptionID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to ProductDescription.ProductDescriptionID.
+  - `CultureID` NCHAR(6.0) PRIMARY KEY NOT NULL, -- Culture identification number. Foreign key to Culture.CultureID.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CultureID`) REFERENCES Production.Culture (`CultureID`)
+ - FOREIGN KEY (`ProductDescriptionID`) REFERENCES Production.ProductDescription (`ProductDescriptionID`)
+ - FOREIGN KEY (`ProductModelID`) REFERENCES Production.ProductModel (`ProductModelID`)
+
+---
+
+Table: BillOfMaterials
+Columns:
+  - `BillOfMaterialsID` INT PRIMARY KEY NOT NULL, -- Primary key for BillOfMaterials records.
+  - `ProductAssemblyID` INT, -- Parent product identification number. Foreign key to Product.ProductID.
+  - `ComponentID` INT NOT NULL, -- Component identification number. Foreign key to Product.ProductID.
+  - `StartDate` DATETIME NOT NULL, -- Date the component started being used in the assembly item.
+  - `EndDate` DATETIME, -- Date the component stopped being used in the assembly item.
+  - `UnitMeasureCode` NCHAR(3.0) NOT NULL, -- Standard code identifying the unit of measure for the quantity.
+  - `BOMLevel` SMALLINT NOT NULL, -- Indicates the depth the component is from its parent (AssemblyID).
+  - `PerAssemblyQty` DECIMAL NOT NULL, -- Quantity of the component needed to create the assembly.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductAssemblyID`,`ComponentID`) REFERENCES Production.Product (`ProductID`,`ProductID`)
+ - FOREIGN KEY (`UnitMeasureCode`) REFERENCES Production.UnitMeasure (`UnitMeasureCode`)
+
+---
+
+Table: ProductPhoto
+Columns:
+  - `ProductPhotoID` INT PRIMARY KEY NOT NULL, -- Primary key for ProductPhoto records.
+  - `ThumbNailPhoto` VARBINARY(-1.0), -- Small image of the product.
+  - `ThumbnailPhotoFileName` NVARCHAR(50.0), -- Small image file name.
+  - `LargePhoto` VARBINARY(-1.0), -- Large image of the product.
+  - `LargePhotoFileName` NVARCHAR(50.0), -- Large image file name.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductPhotoID`) REFERENCES Production.ProductProductPhoto (`ProductPhotoID`)
+
+---
+
+Table: ProductProductPhoto
+Columns:
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `ProductPhotoID` INT PRIMARY KEY NOT NULL, -- Product photo identification number. Foreign key to ProductPhoto.ProductPhotoID.
+  - `Primary` BIT NOT NULL, -- 0 = Photo is not the principal image. 1 = Photo is the principal image.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+ - FOREIGN KEY (`ProductPhotoID`) REFERENCES Production.ProductPhoto (`ProductPhotoID`)
+
+---
+
+Table: TransactionHistory
+Columns:
+  - `TransactionID` INT PRIMARY KEY NOT NULL, -- Primary key for TransactionHistory records.
+  - `ProductID` INT NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `ReferenceOrderID` INT NOT NULL, -- Purchase order, sales order, or work order identification number.
+  - `ReferenceOrderLineID` INT NOT NULL, -- Line number associated with the purchase order, sales order, or work order.
+  - `TransactionDate` DATETIME NOT NULL, -- Date and time of the transaction.
+  - `TransactionType` NCHAR(1.0) NOT NULL, -- W = WorkOrder, S = SalesOrder, P = PurchaseOrder
+  - `Quantity` INT NOT NULL, -- Product quantity.
+  - `ActualCost` MONEY NOT NULL, -- Product cost.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+
+---
+
+Table: ProductReview
+Columns:
+  - `ProductReviewID` INT PRIMARY KEY NOT NULL, -- Primary key for ProductReview records.
+  - `ProductID` INT NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `ReviewerName` NVARCHAR(50.0) NOT NULL, -- Name of the reviewer.
+  - `ReviewDate` DATETIME NOT NULL, -- Date review was submitted.
+  - `EmailAddress` NVARCHAR(50.0) NOT NULL, -- Reviewer's e-mail address.
+  - `Rating` INT NOT NULL, -- Product rating given by the reviewer. Scale is 1 to 5 with 5 as the highest rating.
+  - `Comments` NVARCHAR(3850.0), -- Reviewer's comments
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+
+---
+
+Table: TransactionHistoryArchive
+Columns:
+  - `TransactionID` INT PRIMARY KEY NOT NULL, -- Primary key for TransactionHistoryArchive records.
+  - `ProductID` INT NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `ReferenceOrderID` INT NOT NULL, -- Purchase order, sales order, or work order identification number.
+  - `ReferenceOrderLineID` INT NOT NULL, -- Line number associated with the purchase order, sales order, or work order.
+  - `TransactionDate` DATETIME NOT NULL, -- Date and time of the transaction.
+  - `TransactionType` NCHAR(1.0) NOT NULL, -- W = Work Order, S = Sales Order, P = Purchase Order
+  - `Quantity` INT NOT NULL, -- Product quantity.
+  - `ActualCost` MONEY NOT NULL, -- Product cost.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+
+
+---
+
+Table: ProductSubcategory
+Columns:
+  - `ProductSubcategoryID` INT PRIMARY KEY NOT NULL, -- Primary key for ProductSubcategory records.
+  - `ProductCategoryID` INT NOT NULL, -- Product category identification number. Foreign key to ProductCategory.ProductCategoryID.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Subcategory description.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductCategoryID`) REFERENCES Production.ProductCategory (`ProductCategoryID`)
+ - FOREIGN KEY (`ProductSubcategoryID`) REFERENCES Production.Product (`ProductSubcategoryID`)
+
+---
+
+Table: UnitMeasure
+Columns:
+  - `UnitMeasureCode` NCHAR(3.0) PRIMARY KEY NOT NULL, -- Primary key.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Unit of measure description.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`UnitMeasureCode`) REFERENCES Production.BillOfMaterials (`UnitMeasureCode`)
+ - FOREIGN KEY (`UnitMeasureCode`,`UnitMeasureCode`) REFERENCES Production.Product (`SizeUnitMeasureCode`,`WeightUnitMeasureCode`)
+ - FOREIGN KEY (`UnitMeasureCode`) REFERENCES Purchasing.ProductVendor (`UnitMeasureCode`)
+
+---
+
+Table: WorkOrder
+Columns:
+  - `WorkOrderID` INT PRIMARY KEY NOT NULL, -- Primary key for WorkOrder records.
+  - `ProductID` INT NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `OrderQty` INT NOT NULL, -- Product quantity to build.
+  - `StockedQty` INT NOT NULL, -- Quantity built and put in inventory.
+  - `ScrappedQty` SMALLINT NOT NULL, -- Quantity that failed inspection.
+  - `StartDate` DATETIME NOT NULL, -- Work order start date.
+  - `EndDate` DATETIME, -- Work order end date.
+  - `DueDate` DATETIME NOT NULL, -- Work order due date.
+  - `ScrapReasonID` SMALLINT, -- Reason for inspection failure.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+ - FOREIGN KEY (`ScrapReasonID`) REFERENCES Production.ScrapReason (`ScrapReasonID`)
+ - FOREIGN KEY (`WorkOrderID`) REFERENCES Production.WorkOrderRouting (`WorkOrderID`)
+
+---
+
+Table: Culture
+Columns:
+  - `CultureID` NCHAR(6.0) PRIMARY KEY NOT NULL, -- Primary key for Culture records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Culture description.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`CultureID`) REFERENCES Production.ProductModelProductDescriptionCulture (`CultureID`)
+
+---
+
+Table: WorkOrderRouting
+Columns:
+  - `WorkOrderID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to WorkOrder.WorkOrderID.
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to Product.ProductID.
+  - `OperationSequence` SMALLINT PRIMARY KEY NOT NULL, -- Primary key. Indicates the manufacturing process sequence.
+  - `LocationID` SMALLINT NOT NULL, -- Manufacturing location where the part is processed. Foreign key to Location.LocationID.
+  - `ScheduledStartDate` DATETIME NOT NULL, -- Planned manufacturing start date.
+  - `ScheduledEndDate` DATETIME NOT NULL, -- Planned manufacturing end date.
+  - `ActualStartDate` DATETIME, -- Actual start date.
+  - `ActualEndDate` DATETIME, -- Actual end date.
+  - `ActualResourceHrs` DECIMAL, -- Number of manufacturing hours used.
+  - `PlannedCost` MONEY NOT NULL, -- Estimated manufacturing cost.
+  - `ActualCost` MONEY, -- Actual manufacturing cost.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`LocationID`) REFERENCES Production.Location (`LocationID`)
+ - FOREIGN KEY (`WorkOrderID`) REFERENCES Production.WorkOrder (`WorkOrderID`)
+
+---
+
+Table: Document
+Columns:
+  - `DocumentNode` HIERARCHYID(892.0) PRIMARY KEY NOT NULL, -- Primary key for Document records.
+  - `DocumentLevel` SMALLINT, -- Depth in the document hierarchy.
+  - `Title` NVARCHAR(50.0) NOT NULL, -- Title of the document.
+  - `Owner` INT NOT NULL, -- Employee who controls the document.  Foreign key to Employee.BusinessEntityID
+  - `FolderFlag` BIT NOT NULL, -- 0 = This is a folder, 1 = This is a document.
+  - `FileName` NVARCHAR(400.0) NOT NULL, -- File name of the document
+  - `FileExtension` NVARCHAR(8.0) NOT NULL, -- File extension indicating the document type. For example, .doc or .txt.
+  - `Revision` NCHAR(5.0) NOT NULL, -- Revision number of the document. 
+  - `ChangeNumber` INT NOT NULL, -- Engineering change approval number.
+  - `Status` TINYINT NOT NULL, -- 1 = Pending approval, 2 = Approved, 3 = Obsolete
+  - `DocumentSummary` NVARCHAR(-1.0), -- Document abstract.
+  - `Document` VARBINARY(-1.0), -- Complete document.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Required for FileStream.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`Owner`) REFERENCES HumanResources.Employee (`BusinessEntityID`)
+ - FOREIGN KEY (`DocumentNode`) REFERENCES Production.ProductDocument (`DocumentNode`)
+
+---
+
+Table: Illustration
+Columns:
+  - `IllustrationID` INT PRIMARY KEY NOT NULL, -- Primary key for Illustration records.
+  - `Diagram` XML(-1.0), -- Illustrations used in manufacturing instructions. Stored as XML.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`IllustrationID`) REFERENCES Production.ProductModelIllustration (`IllustrationID`)
+
+---
+
+Table: Location
+Columns:
+  - `LocationID` SMALLINT PRIMARY KEY NOT NULL, -- Primary key for Location records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Location description.
+  - `CostRate` SMALLMONEY NOT NULL, -- Standard hourly cost of the manufacturing location.
+  - `Availability` DECIMAL NOT NULL, -- Work capacity (in hours) of the manufacturing location.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`LocationID`) REFERENCES Production.ProductInventory (`LocationID`)
+ - FOREIGN KEY (`LocationID`) REFERENCES Production.WorkOrderRouting (`LocationID`)
+
+---
+
+Shema: HumanResources:
+Table: Shift
+Columns:
+  - `ShiftID` TINYINT PRIMARY KEY NOT NULL, -- Primary key for Shift records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Shift description.
+  - `StartTime` TIME NOT NULL, -- Shift start time.
+  - `EndTime` TIME NOT NULL, -- Shift end time.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ShiftID`) REFERENCES HumanResources.EmployeeDepartmentHistory (`ShiftID`)
+
+---
+
+Table: Department
+Columns:
+  - `DepartmentID` SMALLINT PRIMARY KEY NOT NULL, -- Primary key for Department records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Name of the department.
+  - `GroupName` NVARCHAR(50.0) NOT NULL, -- Name of the group to which the department belongs.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`DepartmentID`) REFERENCES HumanResources.EmployeeDepartmentHistory (`DepartmentID`)
+
+---
+
+Table: Employee
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key for Employee records.  Foreign key to BusinessEntity.BusinessEntityID.
+  - `NationalIDNumber` NVARCHAR(15.0) NOT NULL, -- Unique national identification number such as a social security number.
+  - `LoginID` NVARCHAR(256.0) NOT NULL, -- Network login.
+  - `OrganizationNode` HIERARCHYID(892.0), -- Where the employee is located in corporate hierarchy.
+  - `OrganizationLevel` SMALLINT, -- The depth of the employee in the corporate hierarchy.
+  - `JobTitle` NVARCHAR(50.0) NOT NULL, -- Work title such as Buyer or Sales Representative.
+  - `BirthDate` DATE NOT NULL, -- Date of birth.
+  - `MaritalStatus` NCHAR(1.0) NOT NULL, -- M = Married, S = Single
+  - `Gender` NCHAR(1.0) NOT NULL, -- M = Male, F = Female
+  - `HireDate` DATE NOT NULL, -- Employee hired on this date.
+  - `SalariedFlag` BIT NOT NULL, -- Job classification. 0 = Hourly, not exempt from collective bargaining. 1 = Salaried, exempt from collective bargaining.
+  - `VacationHours` SMALLINT NOT NULL, -- Number of available vacation hours.
+  - `SickLeaveHours` SMALLINT NOT NULL, -- Number of available sick leave hours.
+  - `CurrentFlag` BIT NOT NULL, -- 0 = Inactive, 1 = Active
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.Person (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.EmployeeDepartmentHistory (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.EmployeePayHistory (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.JobCandidate (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Production.Document (`Owner`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Purchasing.PurchaseOrderHeader (`EmployeeID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Sales.SalesPerson (`BusinessEntityID`)
+
+---
+
+Table: EmployeeDepartmentHistory
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Employee identification number. Foreign key to Employee.BusinessEntityID.
+  - `DepartmentID` SMALLINT PRIMARY KEY NOT NULL, -- Department in which the employee worked including currently. Foreign key to Department.DepartmentID.
+  - `ShiftID` TINYINT PRIMARY KEY NOT NULL, -- Identifies which 8-hour shift the employee works. Foreign key to Shift.Shift.ID.
+  - `StartDate` DATE PRIMARY KEY NOT NULL, -- Date the employee started work in the department.
+  - `EndDate` DATE, -- Date the employee left the department. NULL = Current department.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`DepartmentID`) REFERENCES HumanResources.Department (`DepartmentID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.Employee (`BusinessEntityID`)
+ - FOREIGN KEY (`ShiftID`) REFERENCES HumanResources.Shift (`ShiftID`)
+
+---
+
+Table: EmployeePayHistory
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Employee identification number. Foreign key to Employee.BusinessEntityID.
+  - `RateChangeDate` DATETIME PRIMARY KEY NOT NULL, -- Date the change in pay is effective
+  - `Rate` MONEY NOT NULL, -- Salary hourly rate.
+  - `PayFrequency` TINYINT NOT NULL, -- 1 = Salary received monthly, 2 = Salary received biweekly
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.Employee (`BusinessEntityID`)
+
+---
+
+Table: JobCandidate
+Columns:
+  - `JobCandidateID` INT PRIMARY KEY NOT NULL, -- Primary key for JobCandidate records.
+  - `BusinessEntityID` INT, -- Employee identification number if applicant was hired. Foreign key to Employee.BusinessEntityID.
+  - `Resume` XML(-1.0), -- Résumé in XML format.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES HumanResources.Employee (`BusinessEntityID`)
+
+---
+
+Shema: Purchasing:
+Table: ShipMethod
+Columns:
+  - `ShipMethodID` INT PRIMARY KEY NOT NULL, -- Primary key for ShipMethod records.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Shipping company name.
+  - `ShipBase` MONEY NOT NULL, -- Minimum shipping charge.
+  - `ShipRate` MONEY NOT NULL, -- Shipping charge per pound.
+  - `rowguid` UNIQUEIDENTIFIER NOT NULL, -- ROWGUIDCOL number uniquely identifying the record. Used to support a merge replication sample.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ShipMethodID`) REFERENCES Purchasing.PurchaseOrderHeader (`ShipMethodID`)
+ - FOREIGN KEY (`ShipMethodID`) REFERENCES Sales.SalesOrderHeader (`ShipMethodID`)
+
+---
+
+Table: ProductVendor
+Columns:
+  - `ProductID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to Product.ProductID.
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to Vendor.BusinessEntityID.
+  - `AverageLeadTime` INT NOT NULL, -- The average span of time (in days) between placing an order with the vendor and receiving the purchased product.
+  - `StandardPrice` MONEY NOT NULL, -- The vendor's usual selling price.
+  - `LastReceiptCost` MONEY, -- The selling price when last purchased.
+  - `LastReceiptDate` DATETIME, -- Date the product was last received by the vendor.
+  - `MinOrderQty` INT NOT NULL, -- The maximum quantity that should be ordered.
+  - `MaxOrderQty` INT NOT NULL, -- The minimum quantity that should be ordered.
+  - `OnOrderQty` INT, -- The quantity currently on order.
+  - `UnitMeasureCode` NCHAR(3.0) NOT NULL, -- The product's unit of measure.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+ - FOREIGN KEY (`UnitMeasureCode`) REFERENCES Production.UnitMeasure (`UnitMeasureCode`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Purchasing.Vendor (`BusinessEntityID`)
+
+---
+
+Table: Vendor
+Columns:
+  - `BusinessEntityID` INT PRIMARY KEY NOT NULL, -- Primary key for Vendor records.  Foreign key to BusinessEntity.BusinessEntityID
+  - `AccountNumber` NVARCHAR(15.0) NOT NULL, -- Vendor account (identification) number.
+  - `Name` NVARCHAR(50.0) NOT NULL, -- Company name.
+  - `CreditRating` TINYINT NOT NULL, -- 1 = Superior, 2 = Excellent, 3 = Above average, 4 = Average, 5 = Below average
+  - `PreferredVendorStatus` BIT NOT NULL, -- 0 = Do not use if another vendor is available. 1 = Preferred over other vendors supplying the same product.
+  - `ActiveFlag` BIT NOT NULL, -- 0 = Vendor no longer used. 1 = Vendor is actively used.
+  - `PurchasingWebServiceURL` NVARCHAR(1024.0), -- Vendor URL.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Person.BusinessEntity (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Purchasing.ProductVendor (`BusinessEntityID`)
+ - FOREIGN KEY (`BusinessEntityID`) REFERENCES Purchasing.PurchaseOrderHeader (`VendorID`)
+
+---
+
+Table: PurchaseOrderDetail
+Columns:
+  - `PurchaseOrderID` INT PRIMARY KEY NOT NULL, -- Primary key. Foreign key to PurchaseOrderHeader.PurchaseOrderID.
+  - `PurchaseOrderDetailID` INT PRIMARY KEY NOT NULL, -- Primary key. One line number per purchased product.
+  - `DueDate` DATETIME NOT NULL, -- Date the product is expected to be received.
+  - `OrderQty` SMALLINT NOT NULL, -- Quantity ordered.
+  - `ProductID` INT NOT NULL, -- Product identification number. Foreign key to Product.ProductID.
+  - `UnitPrice` MONEY NOT NULL, -- Vendor's selling price of a single product.
+  - `LineTotal` MONEY NOT NULL, -- Per product subtotal. Computed as OrderQty * UnitPrice.
+  - `ReceivedQty` DECIMAL NOT NULL, -- Quantity actually received from the vendor.
+  - `RejectedQty` DECIMAL NOT NULL, -- Quantity rejected during inspection.
+  - `StockedQty` DECIMAL NOT NULL, -- Quantity accepted into inventory. Computed as ReceivedQty - RejectedQty.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`ProductID`) REFERENCES Production.Product (`ProductID`)
+ - FOREIGN KEY (`PurchaseOrderID`) REFERENCES Purchasing.PurchaseOrderHeader (`PurchaseOrderID`)
+
+---
+
+Table: PurchaseOrderHeader
+Columns:
+  - `PurchaseOrderID` INT PRIMARY KEY NOT NULL, -- Primary key.
+  - `RevisionNumber` TINYINT NOT NULL, -- Incremental number to track changes to the purchase order over time.
+  - `Status` TINYINT NOT NULL, -- Order current status. 1 = Pending; 2 = Approved; 3 = Rejected; 4 = Complete
+  - `EmployeeID` INT NOT NULL, -- Employee who created the purchase order. Foreign key to Employee.BusinessEntityID.
+  - `VendorID` INT NOT NULL, -- Vendor with whom the purchase order is placed. Foreign key to Vendor.BusinessEntityID.
+  - `ShipMethodID` INT NOT NULL, -- Shipping method. Foreign key to ShipMethod.ShipMethodID.
+  - `OrderDate` DATETIME NOT NULL, -- Purchase order creation date.
+  - `ShipDate` DATETIME, -- Estimated shipment date from the vendor.
+  - `SubTotal` MONEY NOT NULL, -- Purchase order subtotal. Computed as SUM(PurchaseOrderDetail.LineTotal)for the appropriate PurchaseOrderID.
+  - `TaxAmt` MONEY NOT NULL, -- Tax amount.
+  - `Freight` MONEY NOT NULL, -- Shipping cost.
+  - `TotalDue` MONEY NOT NULL, -- Total due to vendor. Computed as Subtotal + TaxAmt + Freight.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+Relationships:
+ - FOREIGN KEY (`EmployeeID`) REFERENCES HumanResources.Employee (`BusinessEntityID`)
+ - FOREIGN KEY (`ShipMethodID`) REFERENCES Purchasing.ShipMethod (`ShipMethodID`)
+ - FOREIGN KEY (`VendorID`) REFERENCES Purchasing.Vendor (`BusinessEntityID`)
+ - FOREIGN KEY (`PurchaseOrderID`) REFERENCES Purchasing.PurchaseOrderDetail (`PurchaseOrderID`)
+
+---
+
+Shema: dbo:
+Table: DatabaseLog
+Columns:
+  - `DatabaseLogID` INT PRIMARY KEY NOT NULL, -- Primary key for DatabaseLog records.
+  - `PostTime` DATETIME NOT NULL, -- The date and time the DDL change occurred.
+  - `DatabaseUser` NVARCHAR(128.0) NOT NULL, -- The user who implemented the DDL change.
+  - `Event` NVARCHAR(128.0) NOT NULL, -- The type of DDL statement that was executed.
+  - `Schema` NVARCHAR(128.0), -- The schema to which the changed object belongs.
+  - `Object` NVARCHAR(128.0), -- The object that was changed by the DDL statment.
+  - `TSQL` NVARCHAR(-1.0) NOT NULL, -- The exact Transact-SQL statement that was executed.
+  - `XmlEvent` XML(-1.0) NOT NULL, -- The raw XML data generated by database trigger.
+
+
+---
+
+Table: ErrorLog
+Columns:
+  - `ErrorLogID` INT PRIMARY KEY NOT NULL, -- Primary key for ErrorLog records.
+  - `ErrorTime` DATETIME NOT NULL, -- The date and time at which the error occurred.
+  - `UserName` NVARCHAR(128.0) NOT NULL, -- The user who executed the batch in which the error occurred.
+  - `ErrorNumber` INT NOT NULL, -- The error number of the error that occurred.
+  - `ErrorSeverity` INT, -- The severity of the error that occurred.
+  - `ErrorState` INT, -- The state number of the error that occurred.
+  - `ErrorProcedure` NVARCHAR(126.0), -- The name of the stored procedure or trigger where the error occurred.
+  - `ErrorLine` INT, -- The line number at which the error occurred.
+  - `ErrorMessage` NVARCHAR(4000.0) NOT NULL, -- The message text of the error that occurred.
+
+
+---
+
+Table: AWBuildVersion
+Columns:
+  - `SystemInformationID` TINYINT PRIMARY KEY NOT NULL, -- Primary key for AWBuildVersion records.
+  - `Database Version` NVARCHAR(25.0) NOT NULL, -- Version number of the database in 9.yy.mm.dd.00 format.
+  - `VersionDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+  - `ModifiedDate` DATETIME NOT NULL, -- Date and time the record was last updated.
+
+
+---
+
